@@ -9,6 +9,7 @@ import healpy as hp
 import numpy  as np
 import pickle as pk
 import os
+import time
 
 from plancklens.helpers import mpi
 from plancklens import utils
@@ -38,8 +39,11 @@ class library_sepTP(object):
                 os.makedirs(lib_dir)
             if not os.path.exists(fn_hash):
                 pk.dump(self.hashdict(), open(fn_hash, 'wb'), protocol=2)
-        mpi.barrier()
-        utils.hash_check(pk.load(open(fn_hash, 'rb')), self.hashdict())
+        else:
+            while not os.path.exists(fn_hash):
+                time.sleep(1)
+            utils.hash_check(pk.load(open(fn_hash, 'rb')), self.hashdict())
+        
 
     def hashdict(self):
         assert 0, 'override this'
@@ -209,8 +213,10 @@ class library_jTP(object):
                 os.makedirs(lib_dir)
             if not os.path.exists(fn_hash):
                 pk.dump(self.hashdict(), open(fn_hash, 'wb'), protocol=2)
-        mpi.barrier()
-        utils.hash_check(pk.load(open(fn_hash, 'rb')), self.hashdict())
+        else:
+            while not os.path.exists(fn_hash):
+                time.sleep(1)
+            utils.hash_check(pk.load(open(fn_hash, 'rb')), self.hashdict())
 
     def hashdict(self):
         assert 0, 'override this'

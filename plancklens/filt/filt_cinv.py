@@ -9,6 +9,11 @@ import healpy as hp
 import numpy  as np
 import pickle as pk
 import os
+import time
+
+import logging
+log = logging.getLogger(__name__)
+from logdecorator import log_on_start, log_on_end
 
 from plancklens.helpers import mpi
 from plancklens import utils
@@ -107,9 +112,10 @@ class cinv_t(cinv):
 
             if not os.path.exists(os.path.join(self.lib_dir, "fmask.fits.gz")):
                 hp.write_map(os.path.join(self.lib_dir, "fmask.fits.gz"), self._calc_mask())
-
-        mpi.barrier()
-        utils.hash_check(pk.load(open(os.path.join(lib_dir, "filt_hash.pk"), 'rb')), self.hashdict())
+        else:
+            while not os.path.exists(os.path.join(lib_dir, "filt_hash.pk")):
+                time.sleep(1)
+            utils.hash_check(pk.load(open(os.path.join(lib_dir, "filt_hash.pk"), 'rb')), self.hashdict())
 
     def _ninv_hash(self):
         ret = []
@@ -220,9 +226,11 @@ class cinv_p(cinv):
 
             if not os.path.exists(os.path.join(self.lib_dir,  "fmask.fits.gz")):
                 hp.write_map(os.path.join(self.lib_dir,  "fmask.fits.gz"),  self._calc_mask())
-
-        mpi.barrier()
-        utils.hash_check(pk.load(open(os.path.join(lib_dir, "filt_hash.pk"), 'rb')), self.hashdict())
+        else:
+            while not os.path.exists(os.path.join(lib_dir, "filt_hash.pk")):
+                time.sleep(1)
+            utils.hash_check(pk.load(open(os.path.join(lib_dir, "filt_hash.pk"), 'rb')), self.hashdict())
+        
 
     def hashdict(self):
         return {'lmax': self.lmax,
@@ -292,12 +300,12 @@ class cinv_p(cinv):
 
     def _ninv_hash(self):
         ret = []
-        for ninv_comp in self.ninv[0]:
+        for ninv_comp in self.ninv:
             if isinstance(ninv_comp, np.ndarray) and ninv_comp.size > 1:
                 ret.append(utils.clhash(ninv_comp))
             else:
                 ret.append(ninv_comp)
-        return [ret]
+        return ret
 
 
 class cinv_tp:
@@ -386,8 +394,10 @@ class cinv_tp:
                 fmask = self.calc_mask()
                 hp.write_map(os.path.join(self.lib_dir,  "fmask.fits.gz"), fmask)
 
-        mpi.barrier()
-        utils.hash_check(pk.load(open(os.path.join(lib_dir,  "filt_hash.pk"), 'rb')), self.hashdict())
+        else:
+            while not os.path.exists(os.path.join(lib_dir, "filt_hash.pk")):
+                time.sleep(1)
+            utils.hash_check(pk.load(open(os.path.join(lib_dir, "filt_hash.pk"), 'rb')), self.hashdict())
 
     def hashdict(self):
         ret = {'lmax': self.lmax,
@@ -492,16 +502,16 @@ class library_cinv_sepTP(filt_simple.library_sepTP):
         self.cinv_t = cinvt
         self.cinv_p = cinvp
         super(library_cinv_sepTP, self).__init__(lib_dir, sim_lib, cl_weights, soltn_lib=soltn_lib)
-
         if mpi.rank == 0:
             fname_mask = os.path.join(self.lib_dir, "fmask.fits.gz")
             if not os.path.exists(fname_mask):
                 fmask = self.cinv_t.get_fmask()
                 assert np.all(fmask == self.cinv_p.get_fmask())
                 hp.write_map(fname_mask, fmask)
-
-        mpi.barrier()
-        utils.hash_check(pk.load(open(os.path.join(lib_dir, "filt_hash.pk"), 'rb')), self.hashdict())
+        else:
+            while not os.path.exists(os.path.join(lib_dir, "filt_hash.pk")):
+                time.sleep(1)
+            utils.hash_check(pk.load(open(os.path.join(lib_dir, "filt_hash.pk"), 'rb')), self.hashdict())
 
     def hashdict(self):
         return {'cinv_t': self.cinv_t.hashdict(),
@@ -570,8 +580,10 @@ class library_cinv_jTP(filt_simple.library_jTP):
                 assert np.all(fmask == self.cinv_tp.get_fmask())
                 hp.write_map(fname_mask, fmask)
 
-        mpi.barrier()
-        utils.hash_check(pk.load(open(os.path.join(lib_dir, "filt_hash.pk"), 'rb')), self.hashdict())
+        else:
+            while not os.path.exists(os.path.join(lib_dir, "filt_hash.pk")):
+                time.sleep(1)
+            utils.hash_check(pk.load(open(os.path.join(lib_dir, "filt_hash.pk"), 'rb')), self.hashdict())
 
     def hashdict(self):
         return {'cinv_tp': self.cinv_tp.hashdict(),

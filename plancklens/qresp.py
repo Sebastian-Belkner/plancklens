@@ -38,9 +38,9 @@ import numpy as np
 import pickle as pk
 
 from plancklens import utils as ut, utils_spin as uspin, utils_qe as uqe
-from plancklens.helpers import mpi, sql
+from plancklens.helpers import mpi
 
-
+from plancklens.helpers import sql
 
 def get_qes(qe_key, lmax, cls_weight, lmax2=None):
     """ Defines the quadratic estimator weights for quadratic estimator key.

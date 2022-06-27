@@ -4,6 +4,7 @@
 """
 from __future__ import print_function
 from __future__ import absolute_import
+import time
 import healpy as hp
 import numpy as np
 import os
@@ -77,9 +78,11 @@ class library:
         if (mpi.rank == 0) and (not os.path.exists(fnhash)):
             if not os.path.exists(self.lib_dir): os.makedirs(self.lib_dir)
             pk.dump(self.hashdict(), open(fnhash, 'wb'), protocol=2)
-        mpi.barrier()
+        else:
+            while not os.path.exists(fnhash):
+                time.sleep(1)
+            ut.hash_check(pk.load(open(fnhash, 'rb')), self.hashdict())
 
-        ut.hash_check(pk.load(open(fnhash, 'rb')), self.hashdict())
         if mpi.rank == 0:
             if not os.path.exists(os.path.join(lib_dir, 'fskies.dat')):
                 print("Caching sky fractions...")
@@ -92,7 +95,8 @@ class library:
                     for lab, _f in zip(np.sort(list(fskies.keys())),
                                        np.array(list(fskies.values()))[np.argsort(list(fskies.keys()))]):
                         f.write('%4s %.5f \n' % (lab, _f))
-        mpi.barrier()
+        while not os.path.exists(os.path.join(lib_dir, 'fskies.dat')):
+            time.sleep(1)
         fskies = {}
         with open(os.path.join(lib_dir, 'fskies.dat')) as f:
             for line in f:
@@ -199,7 +203,8 @@ class library:
 
     def get_dat_qlm(self, k, **kwargs):
         return self.get_sim_qlm(k, -1, **kwargs)
-
+ 
+ 
     def get_sim_qlm_mf(self, k, mc_sims, lmax=None):
         """Returns a QE mean-field estimate, by averaging QE estimates from a set simulations (caches the result).
 

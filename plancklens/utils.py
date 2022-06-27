@@ -171,6 +171,7 @@ def hash_check(hash1, hash2, ignore=['lib_dir', 'prefix'], keychain=[]):
         else:
             if not( v1 == v2 ):
                 hashfail('UNEQUAL VALUES')
+
 class stats:
     """Simple minded library for means and covariances from sims.
 

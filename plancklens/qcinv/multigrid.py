@@ -75,9 +75,10 @@ class multigrid_chain:
         if stage.depth > self.plogdepth:
             return
 
-        log_str = '   ' * stage.depth + '(%4d, %04d) [%s] (%d, %.8f)' % (
+        log_str = 'plancklens.multigridsolve:'+'   ' * stage.depth + '(%4d, %04d) [%s] (%d, %.8f)' % (
         stage.nside, stage.lmax, str(elapsed), iter, eps) + '\n'
         sys.stdout.write(log_str)
+        sys.stdout.flush()
 
         if self.debug_log_prefix is not None:
             log = open(self.debug_log_prefix + 'stage_all.dat', 'a')

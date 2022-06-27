@@ -36,6 +36,7 @@ class rng_db:
         except:
             print("rng_db::rngdb add failed!")
 
+
     def get(self, idx):
         cur = self.con.cursor()
         cur.execute("SELECT type, pos, has_gauss, cached_gaussian, keys FROM rngdb WHERE id=?", (idx,))
@@ -125,6 +126,7 @@ class _pix_lib_phas(sim_lib):
         super(_pix_lib_phas, self).__init__(lib_dir, **kwargs)
 
     def _build_sim_from_rng(self, rng_state, **kwargs):
+        print(rng_state)
         np.random.set_state(rng_state)
         return np.random.standard_normal(self.shape)
 
