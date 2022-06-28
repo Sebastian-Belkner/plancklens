@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-import os
+import os, sys
 import sqlite3
 
 import healpy as hp
@@ -81,6 +81,7 @@ class sim_lib(object):
         utils.hash_check(hsh, self.hashdict(), ignore=['lib_dir'])
 
         self._rng_db = rng_db(os.path.join(lib_dir, 'rngdb.db'), idtype='INTEGER')
+
         self._get_rng_state = get_state_func
 
     def get_sim(self, idx, **kwargs):
@@ -88,6 +89,7 @@ class sim_lib(object):
         if self.has_nmax(): assert idx < self.nmax
         if not self.is_stored(idx):
             self._rng_db.add(idx, self._get_rng_state())
+
         return self._build_sim_from_rng(self._rng_db.get(idx), **kwargs)
 
     def has_nmax(self):

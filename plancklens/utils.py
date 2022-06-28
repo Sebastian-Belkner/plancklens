@@ -169,6 +169,9 @@ def hash_check(hash1, hash2, ignore=['lib_dir', 'prefix'], keychain=[]):
             if not np.allclose(v1, v2):
                 hashfail('UNEQUAL ARRAY')
         else:
+            print(key)
+            print(v1)
+            print(v2)
             if not( v1 == v2 ):
                 hashfail('UNEQUAL VALUES')
 
