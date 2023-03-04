@@ -10,19 +10,28 @@ import pickle as pk
 from plancklens.helpers import mpi
 from plancklens import utils
 
+import logging
+log = logging.getLogger(__name__)
+
 class rng_db:
     """ Class to save and read random number generators states in a sqlite database file.
 
     """
 
     def __init__(self, fname, idtype="INTEGER"):
-        if not os.path.exists(fname) and mpi.rank == 0:
-            con = sqlite3.connect(fname, detect_types=sqlite3.PARSE_DECLTYPES, timeout=3600)
-            cur = con.cursor()
-            cur.execute("create table rngdb (id %s PRIMARY KEY, "
-                        "type STRING, pos INTEGER, has_gauss INTEGER,cached_gaussian REAL, keys STRING)" % idtype)
-            con.commit()
-        mpi.barrier()
+        first_rank = mpi.bcast(mpi.rank)
+        if first_rank == mpi.rank:
+            if not os.path.exists(fname):
+                con = sqlite3.connect(fname, detect_types=sqlite3.PARSE_DECLTYPES, timeout=3600)
+                cur = con.cursor()
+                cur.execute("create table rngdb (id %s PRIMARY KEY, "
+                            "type STRING, pos INTEGER, has_gauss INTEGER,cached_gaussian REAL, keys STRING)" % idtype)
+                con.commit()
+            for n in range(mpi.size):
+                if n != mpi.rank:
+                    mpi.send(1, dest=n)
+        else:
+            mpi.receive(None, source=mpi.ANY_SOURCE)
 
         self.con = sqlite3.connect(fname, timeout=3600., detect_types=sqlite3.PARSE_DECLTYPES)
 
@@ -71,16 +80,26 @@ class sim_lib(object):
     """
 
     def __init__(self, lib_dir, get_state_func=np.random.get_state, nsims_max=None):
-        if not os.path.exists(lib_dir) and mpi.rank == 0:
+        first_rank = mpi.bcast(mpi.rank)
+        if not os.path.exists(lib_dir) and first_rank == mpi.rank:
             os.makedirs(lib_dir)
         self.nmax = nsims_max
+        
         fn_hash = os.path.join(lib_dir, 'sim_hash.pk')
-        if mpi.rank == 0 and not os.path.exists(fn_hash):
-            pk.dump(self.hashdict(), open(fn_hash, 'wb'), protocol=2)
-        mpi.barrier()
+        first_rank = mpi.bcast(mpi.rank)
+        if first_rank == mpi.rank:
+            if not os.path.exists(fn_hash):
+                pk.dump(self.hashdict(), open(fn_hash, 'wb'), protocol=2)
+            for n in range(mpi.size):
+                if n != mpi.rank:
+                    mpi.send(1, dest=n)
+        else:
+            mpi.receive(None, source=mpi.ANY_SOURCE)
 
-        hsh = pk.load(open(fn_hash, 'rb'))
-        utils.hash_check(hsh, self.hashdict(), ignore=['lib_dir'])
+        first_rank = mpi.bcast(mpi.rank)
+        if first_rank == mpi.rank:
+            hsh = pk.load(open(fn_hash, 'rb'))
+            utils.hash_check(hsh, self.hashdict(), ignore=['lib_dir'])
 
         self._rng_db = rng_db(os.path.join(lib_dir, 'rngdb.db'), idtype='INTEGER')
         self._get_rng_state = get_state_func

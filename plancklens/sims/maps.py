@@ -32,9 +32,15 @@ class cmb_maps(object):
 
         if lib_dir is not None:
             fn_hash = os.path.join(lib_dir, 'sim_hash.pk')
-            if mpi.rank == 0 and not os.path.exists(fn_hash):
-                pk.dump(self.hashdict(), open(fn_hash, 'wb'), protocol=2)
-            mpi.barrier()
+            first_rank = mpi.bcast(mpi.rank)
+            if first_rank == mpi.rank:
+                if not os.path.exists(fn_hash):
+                    pk.dump(self.hashdict(), open(fn_hash, 'wb'), protocol=2)
+                for n in range(mpi.size):
+                    if n != mpi.rank:
+                        mpi.send(1, dest=n)
+            else:
+                mpi.receive(None, source=mpi.ANY_SOURCE)
             hash_check(self.hashdict(), pk.load(open(fn_hash, 'rb')))
 
     def hashdict(self):
@@ -201,9 +207,15 @@ class cmb_maps_harmonicspace(object):
 
         if lib_dir is not None:
             fn_hash = os.path.join(lib_dir, 'sim_hash.pk')
-            if mpi.rank == 0 and not os.path.exists(fn_hash):
-                pk.dump(self.hashdict(), open(fn_hash, 'wb'), protocol=2)
-            mpi.barrier()
+            first_rank = mpi.bcast(mpi.rank)
+            if first_rank == mpi.rank:
+                if not os.path.exists(fn_hash):
+                    pk.dump(self.hashdict(), open(fn_hash, 'wb'), protocol=2)
+                for n in range(mpi.size):
+                    if n != mpi.rank:
+                        mpi.send(1, dest=n)
+            else:
+                mpi.receive(None, source=mpi.ANY_SOURCE)
             hash_check(self.hashdict(), pk.load(open(fn_hash, 'rb')))
 
     def hashdict(self):

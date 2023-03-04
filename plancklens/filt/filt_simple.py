@@ -33,12 +33,18 @@ class library_sepTP(object):
         self.soltn_lib = soltn_lib
         self.cache = cache
         fn_hash = os.path.join(lib_dir, 'filt_hash.pk')
-        if mpi.rank == 0:
+        first_rank = mpi.bcast(mpi.rank)
+        if first_rank == mpi.rank:
             if not os.path.exists(lib_dir):
                 os.makedirs(lib_dir)
             if not os.path.exists(fn_hash):
                 pk.dump(self.hashdict(), open(fn_hash, 'wb'), protocol=2)
-        mpi.barrier()
+            
+            for n in range(mpi.size):
+                if n != mpi.rank:
+                    mpi.send(1, dest=n)
+        else:
+            mpi.receive(None, source=mpi.ANY_SOURCE)
         utils.hash_check(pk.load(open(fn_hash, 'rb')), self.hashdict())
 
     def hashdict(self):
@@ -204,12 +210,17 @@ class library_jTP(object):
         self.soltn_lib = soltn_lib
         self.cache = cache
         fn_hash = os.path.join(lib_dir, 'filt_hash.pk')
-        if mpi.rank == 0:
+        first_rank = mpi.bcast(mpi.rank)
+        if first_rank == mpi.rank:
             if not os.path.exists(lib_dir):
                 os.makedirs(lib_dir)
             if not os.path.exists(fn_hash):
                 pk.dump(self.hashdict(), open(fn_hash, 'wb'), protocol=2)
-        mpi.barrier()
+            for n in range(mpi.size):
+                if n != mpi.rank:
+                    mpi.send(1, dest=n)
+        else:
+            mpi.receive(None, source=mpi.ANY_SOURCE)
         utils.hash_check(pk.load(open(fn_hash, 'rb')), self.hashdict())
 
     def hashdict(self):

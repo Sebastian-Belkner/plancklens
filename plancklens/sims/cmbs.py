@@ -9,6 +9,9 @@ from plancklens import utils
 from plancklens.helpers import mpi
 from plancklens.sims import phas
 
+import logging
+log = logging.getLogger(__name__)
+
 verbose = False
 
 def _get_fields(cls):
@@ -44,10 +47,11 @@ class sims_cmb_unl:
                         str += " " + _t1 + _t2
         if verbose and str != '': print(str + ' set to zero')
         for ell in range(lmin,lmax + 1):
+            if ell % 500 == 0:
+                log.info("sims_cmb_unl:: rank {} -- rmat calc {}/{}".format(mpi.rank, ell, lmax))
             t, v = np.linalg.eigh(rmat[ell, :, :])
             assert np.all(t >= 0.), (ell, t, rmat[ell, :, :])  # Matrix not positive semidefinite
             rmat[ell, :, :] = np.dot(v, np.dot(np.diag(np.sqrt(t)), v.T))
-
         self._cl_hash = {}
         for k in cls_unl.keys():
             self._cl_hash[k] =utils.clhash(cls_unl[k])
@@ -126,14 +130,14 @@ class sims_cmb_len:
                  dlmax=1024, nside_lens=4096, facres=0, nbands=16, verbose=True):
         if not os.path.exists(lib_dir) and mpi.rank == 0:
             os.makedirs(lib_dir)
-        mpi.barrier()
+        # mpi.barrier()
         fields = _get_fields(cls_unl)
 
         if lib_pha is None and mpi.rank == 0:
             lib_pha = phas.lib_phas(os.path.join(lib_dir, 'phas'), len(fields), lmax + dlmax)
         else:  # Check that the lib_alms are compatible :
             assert lib_pha.lmax == lmax + dlmax
-        mpi.barrier()
+        # mpi.barrier()
 
 
         self.lmax = lmax
@@ -148,9 +152,15 @@ class sims_cmb_len:
         self.fields = _get_fields(cls_unl)
 
         fn_hash = os.path.join(lib_dir, 'sim_hash.pk')
-        if mpi.rank == 0 and not os.path.exists(fn_hash) :
-            pk.dump(self.hashdict(), open(fn_hash, 'wb'), protocol=2)
-        mpi.barrier()
+        first_rank = mpi.bcast(mpi.rank)
+        if first_rank == mpi.rank:
+            if not os.path.exists(fn_hash):
+                pk.dump(self.hashdict(), open(fn_hash, 'wb'), protocol=2)
+            for n in range(mpi.size):
+                if n != mpi.rank:
+                    mpi.send(1, dest=n)
+        else:
+            mpi.receive(None, source=MPI.ANY_SOURCE)
         utils.hash_check(self.hashdict(), pk.load(open(fn_hash, 'rb')))
         try:
             import lenspyx
