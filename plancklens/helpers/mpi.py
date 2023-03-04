@@ -45,10 +45,12 @@ if not is_notebook() and cond4mpi4py:
         rank = 0
         size = 1
         barrier = lambda: -1
+        bcast = lambda _: 0
         finalize = lambda: -1
         if verbose: print('mpi.py: unable to import mpi4py\n')
 else:
     rank = 0
     size = 1
     barrier = lambda: -1
+    bcast = lambda _: 0
     finalize = lambda: -1
