@@ -160,7 +160,7 @@ class sims_cmb_len:
                 if n != mpi.rank:
                     mpi.send(1, dest=n)
         else:
-            mpi.receive(None, source=MPI.ANY_SOURCE)
+            mpi.receive(None, source=mpi.ANY_SOURCE)
         utils.hash_check(self.hashdict(), pk.load(open(fn_hash, 'rb')))
         try:
             import lenspyx
