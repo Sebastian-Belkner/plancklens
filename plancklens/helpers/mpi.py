@@ -7,7 +7,6 @@ import os
 
 verbose = False
 
-
 def is_notebook() -> bool:
     try:
         shell = get_ipython().__class__.__name__
