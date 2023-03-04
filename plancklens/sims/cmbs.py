@@ -128,16 +128,22 @@ class sims_cmb_len:
     """
     def __init__(self, lib_dir, lmax, cls_unl, lib_pha=None,
                  dlmax=1024, nside_lens=4096, facres=0, nbands=16, verbose=True):
-        if not os.path.exists(lib_dir) and mpi.rank == 0:
-            os.makedirs(lib_dir)
-        # mpi.barrier()
+        first_rank = mpi.bcast(mpi.rank)
+        if first_rank == mpi.rank:
+            if not os.path.exists(lib_dir):
+                os.makedirs(lib_dir)
+            for n in range(mpi.size):
+                if n != mpi.rank:
+                    mpi.send(1, dest=n)
+        else:
+            mpi.receive(None, source=mpi.ANY_SOURCE)
+        fields = _get_fields(cls_unl)
         fields = _get_fields(cls_unl)
 
-        if lib_pha is None and mpi.rank == 0:
-            lib_pha = phas.lib_phas(os.path.join(lib_dir, 'phas'), len(fields), lmax + dlmax)
+        if lib_pha is None:
+            lib_pha = phas.lib_phas(lib_dir, len(fields), lmax + dlmax)
         else:  # Check that the lib_alms are compatible :
             assert lib_pha.lmax == lmax + dlmax
-        # mpi.barrier()
 
 
         self.lmax = lmax
