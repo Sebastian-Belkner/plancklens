@@ -138,7 +138,6 @@ class sims_cmb_len:
         else:
             mpi.receive(None, source=mpi.ANY_SOURCE)
         fields = _get_fields(cls_unl)
-        fields = _get_fields(cls_unl)
 
         if lib_pha is None:
             lib_pha = phas.lib_phas(lib_dir, len(fields), lmax + dlmax)
