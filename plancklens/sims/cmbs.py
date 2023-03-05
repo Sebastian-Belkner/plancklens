@@ -47,8 +47,8 @@ class sims_cmb_unl:
                         str += " " + _t1 + _t2
         if verbose and str != '': print(str + ' set to zero')
         for ell in range(lmin,lmax + 1):
-            if ell % 500 == 0:
-                log.info("sims_cmb_unl:: rank {} -- rmat calc {}/{}".format(mpi.rank, ell, lmax))
+            if ell % 1000 == 0:
+                log.debug("sims_cmb_unl:: rank {} -- rmat calc {}/{}".format(mpi.rank, ell, lmax))
             t, v = np.linalg.eigh(rmat[ell, :, :])
             assert np.all(t >= 0.), (ell, t, rmat[ell, :, :])  # Matrix not positive semidefinite
             rmat[ell, :, :] = np.dot(v, np.dot(np.diag(np.sqrt(t)), v.T))
