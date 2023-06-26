@@ -37,9 +37,11 @@ class library_sepTP(object):
             if not os.path.exists(lib_dir):
                 os.makedirs(lib_dir)
             if not os.path.exists(fn_hash):
-                pk.dump(self.hashdict(), open(fn_hash, 'wb'), protocol=2)
+                with open(fn_hash, 'wb') as f:
+                    pk.dump(self.hashdict(), f, protocol=2)
         mpi.barrier()
-        utils.hash_check(pk.load(open(fn_hash, 'rb')), self.hashdict(), fn=fn_hash)
+        with open(fn_hash, 'rb') as f:
+            utils.hash_check(pk.load(f), self.hashdict(), fn=fn_hash)
 
     def hashdict(self):
         assert 0, 'override this'

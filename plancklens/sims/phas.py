@@ -76,10 +76,12 @@ class sim_lib(object):
         self.nmax = nsims_max
         fn_hash = os.path.join(lib_dir, 'sim_hash.pk')
         if mpi.rank == 0 and not os.path.exists(fn_hash):
-            pk.dump(self.hashdict(), open(fn_hash, 'wb'), protocol=2)
+            with open(fn_hash, 'wb') as f:
+                pk.dump(self.hashdict(), f, protocol=2)
         mpi.barrier()
 
-        hsh = pk.load(open(fn_hash, 'rb'))
+        with open(fn_hash, 'rb') as f:
+            hsh = pk.load(f)
         utils.hash_check(hsh, self.hashdict(), ignore=['lib_dir'], fn=fn_hash)
 
         self._rng_db = rng_db(os.path.join(lib_dir, 'rngdb.db'), idtype='INTEGER')

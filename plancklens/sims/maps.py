@@ -157,7 +157,8 @@ class cmb_maps_nlev(cmb_maps):
 
         """
         vamin = np.sqrt(hp.nside2pixarea(self.nside, degrees=True)) * 60
-        return self.nlev_p / vamin * self.pix_lib_phas.get_sim(idx, idf=1)
+        noisescaling = 1 # hp.read_map('/mnt/c/Users/sebas/OneDrive/SCRATCH/delensalot/generic/sims_cmb_len_lminB200_mfda_rhitssky_center/noisescaling.fits')
+        return self.nlev_p / vamin * self.pix_lib_phas.get_sim(idx, idf=1) * noisescaling
 
     def get_sim_unoise(self, idx):
         """Returns noise U-polarization map for a simulation

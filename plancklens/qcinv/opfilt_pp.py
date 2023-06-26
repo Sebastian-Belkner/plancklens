@@ -316,6 +316,21 @@ def calc_prep(maps, s_cls, n_inv_filt:alm_filter_ninv):
     hp.almxfl(blm, n_inv_filt.b_transf_b * npix / (4. * np.pi), inplace=True)
     return eblm([elm, blm])
 
+# def calc_prep(maps, s_cls, n_inv_filt:alm_filter_ninv):
+#     qmap = np.copy(util.read_map(maps[0]))
+#     umap = np.copy(util.read_map(maps[1]))
+#     assert len(qmap) == len(umap)
+#     lmax = len(n_inv_filt.b_transf) - 1
+#     npix = len(qmap)
+
+#     n_inv_filt.apply_map([qmap, umap])
+#     elm, blm = map2alm_spin([qmap, umap], 2, lmax=lmax)
+#     elm, blm = hph.map2alm_spin([qumap2[0] * mask, qumap2[1] * mask], spin2,
+#         lmax=min(3 * nside - 1, lmax + lmax_mask), zbounds=zbounds)
+
+#     hp.almxfl(elm, n_inv_filt.b_transf_e * npix / (4. * np.pi), inplace=True)
+#     hp.almxfl(blm, n_inv_filt.b_transf_b * npix / (4. * np.pi), inplace=True)
+#     return eblm([elm, blm])
 
 def apply_fini(alm, s_cls, n_inv_filt:alm_filter_ninv):
     sfilt = alm_filter_sinv(s_cls, alm.lmax)

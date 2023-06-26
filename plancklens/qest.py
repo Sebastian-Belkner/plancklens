@@ -77,10 +77,12 @@ class library:
         fnhash = os.path.join(self.lib_dir, "qe_sim_hash.pk")
         if (mpi.rank == 0) and (not os.path.exists(fnhash)):
             if not os.path.exists(self.lib_dir): os.makedirs(self.lib_dir)
-            pk.dump(self.hashdict(), open(fnhash, 'wb'), protocol=2)
+            with open(fnhash, 'wb') as f:
+                pk.dump(self.hashdict(), f, protocol=2)
         mpi.barrier()
 
-        ut.hash_check(pk.load(open(fnhash, 'rb')), self.hashdict(), fn=fnhash)
+        with open(fnhash, 'rb') as f:
+            ut.hash_check(pk.load(f), self.hashdict(), fn=fnhash)
         if mpi.rank == 0:
             if not os.path.exists(os.path.join(lib_dir, 'fskies.dat')):
                 print("Caching sky fractions...")

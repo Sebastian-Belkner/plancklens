@@ -1,8 +1,10 @@
 """Flexible conjugate directions solver module.
 
 """
+import os
 import numpy as np
 
+from plancklens.qcinv.util_alm import eblm
 
 def PTR(p, t, r):
     return lambda i: max(0, i - max(p, int(min(t, np.mod(i, r)))))
@@ -52,13 +54,37 @@ def cd_solve(x, b, fwd_op, pre_ops, dot_op, criterion, tr, cache=cache_mem(), ro
 
     """
 
+
+    def _preproc(mask, res):
+        # res.elm = hp.map2alm(hp.alm2map(res.elm, nside=2048)*mask, lmax=3000)
+        return res
+
+    # import healpy as hp
+    # from delensalot.config.config_helper import data_functions as df
+    # mask_map = hp.read_map('/mnt/c/Users/sebas/OneDrive/SCRATCH/delensalot/generic/sims_cmb_len_lminB200_mfda_maskedsky_center/mask.fits')
+    # mask_lm = hp.map2alm(mask_map, lmax=3000)
+    # mask_lm_smoothed = hp.smoothalm(mask_lm, fwhm=df.a2r(40))
+    # mask_map_smoothed = hp.alm2map(mask_lm_smoothed, nside=2048)
+    # mask_map_smoothed_binary = np.where(mask_map_smoothed>0.9,1,0)
+
     n_pre_ops = len(pre_ops)
 
     residual = b - fwd_op(x)
     searchdirs = [op(residual) for op in pre_ops]
+    # print("lmax of residual:".format(residual.lmax))
 
     iter = 0
-    while not criterion(iter, x, residual):
+    while not criterion(iter, x, _preproc(None, residual)): # _preproc(mask_map_smoothed_binary, residual)
+        path = '/mnt/c/Users/sebas/OneDrive/SCRATCH/delensalot/generic/sims_cmb_len_lminB200_mfda_rhitssky_center/cgsolver/'
+        fn = 'residual_{}'.format(iter)
+        
+        if not os.path.isdir(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
+        if type(residual) == type(eblm([[],[]])):
+            np.save(path+fn+'_qe_elm', residual.elm)
+            np.save(path+fn+'_qe_blm', residual.blm)
+        else:
+            np.save(path+fn+'_it1', residual)
         searchfwds = [fwd_op(searchdir) for searchdir in searchdirs]
         deltas = [dot_op(searchdir, residual) for searchdir in searchdirs]
 
