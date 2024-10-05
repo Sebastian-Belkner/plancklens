@@ -1,5 +1,5 @@
 import setuptools
-# from numpy.distutils.core import setup
+from numpy.distutils.core import setup
 from numpy.distutils.misc_util import Configuration
 
 with open("README.md", "r") as fh:
@@ -15,7 +15,7 @@ def configuration(parent_package='', top_path=''):
                          extra_link_args=['-lgomp'], libraries=['gomp'], extra_f90_compile_args=['-fopenmp', '-w'])
     return config
 
-setuptools.setup(
+setup(
     name='plancklens',
     version='0.0.1',
     packages=['plancklens', 'plancklens.n1', 'plancklens.filt', 'plancklens.sims', 'plancklens.helpers',
