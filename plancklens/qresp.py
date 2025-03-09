@@ -85,7 +85,7 @@ def get_qes(qe_key, lmax, cls_weight, lmax2=None, transf=None):
             return uqe.qe_simplify(uqe.qe_proj(qes, qe_key[2], qe_key[3]) + uqe.qe_proj(qes, qe_key[3], qe_key[2]))
         else:
             assert 0, 'qe key %s  not recognized'%qe_key
-    elif qe_key in ['ntt']:
+    elif qe_key in ['ntt', 'n']:
         lega = uqe.qeleg(0, 0, 1   * _clinv(transf[:lmax + 1]))
         legb = uqe.qeleg(0, 0, 0.5 * _clinv(transf[:lmax + 1]))  # Weird norm to match PS case for no beam
         qes = [uqe.qe(lega, legb, lambda L: np.ones(len(L), dtype=float))]
@@ -156,6 +156,7 @@ def get_covresp(source, s1, s2, cls, lmax, transf=None):
         return s_source, prR, mrR, cL_scal
     elif source in ['ntt', 'n']:
         assert transf is not None
+        cond = s1 == 0 and s2 == 0
         cL_scal =  lambda ell : np.ones(len(ell), dtype=float)
         assert 0, 'dont think this parametrization works here'
         return s_source, prR, mrR, cL_scal
@@ -169,9 +170,9 @@ def qe_spin_data(qe_key):
         unordered list of unique spins (>= 0) input to the estimator, and the spin-1 qe key.
 
     """
-    if qe_key in ['ntt']:
+    if qe_key in ['ntt', 'n']:
         return 0, 'G', [0], 'n'
-    qes = get_qes(qe_key, 10, {k:np.ones(11 + 4, dtype=float) for k in ['tt', 'te', 'ee', 'bb']}) #Hack
+    qes = get_qes(qe_key.split('_bh_')[0], 10, {k:np.ones(11 + 4, dtype=float) for k in ['tt', 'te', 'ee', 'bb']}) #Hack
     spins_out = [qe.leg_a.spin_ou + qe.leg_b.spin_ou for qe in qes]
     spins_in = np.unique(np.abs([qe.leg_a.spin_in for qe in qes] + [qe.leg_b.spin_in for qe in qes]))
     assert len(np.unique(spins_out)) == 1, spins_out
@@ -315,7 +316,7 @@ def get_response(qe_key, lmax_ivf, source, cls_weight, cls_cmb, fal, fal_leg2=No
 def _get_response_custom(qe_key, qes, source, fal_leg1, lmax_qlm, fal_leg2=None, transf=None):
     """Customized response code for selected keys """
     fal_leg2 = fal_leg1 if fal_leg2 is None else fal_leg2
-    if 'tt' in qe_key and source in ['n', 'ntt']:
+    if source in ['n', 'ntt']:
         assert transf is not None
         # mask source keys does not fit under original parametrization scheme of plancklens
         # here source has spin 0 and qe can have any spin
@@ -330,7 +331,7 @@ def _get_response_custom(qe_key, qes, source, fal_leg1, lmax_qlm, fal_leg2=None,
             so, to = (qe.leg_a.spin_ou, qe.leg_b.spin_ou)
             s_qe  = abs(so + to)
             s_source = 0
-            assert (si, ti) == (0, 0)
+            #assert (si, ti) == (0, 0)
             s2, t2 = (0, 0) # Temperature only noise maps
             FA = uspin.get_spin_matrix(si, s2, fal_leg1)
             FB = uspin.get_spin_matrix(ti, t2, fal_leg2)
